@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickChat</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+  <style>
+    .hide { display: none !important; }
+  </style>
+</head>
+
+<body class="bg-gray-100 h-screen overflow-hidden">
+
+<!-- ================= JOIN SCREEN ================= -->
+<div id="joinScreen" class="h-screen flex items-center justify-center">
+  <form id="joinForm" class="bg-white p-8 rounded-xl shadow-lg w-96">
+    <h2 class="text-2xl font-bold mb-6 text-center">QuickChat</h2>
+
+    <input id="usernameInput" required
+           class="w-full border p-3 rounded-lg mb-4"
+           placeholder="Enter your name" />
+
+    <button class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700">
+      Join
+    </button>
+  </form>
+</div>
+
+<!-- ================= CHAT SCREEN ================= -->
+<div id="chatScreen" class="hide h-screen flex">
+
+  <!-- Sidebar -->
+  <div class="w-72 bg-white border-r flex flex-col">
+    <div class="p-5 border-b">
+      <h2 class="text-xl font-semibold">Messages</h2>
+      <p class="text-sm text-gray-500 mt-1">
+        Logged in as
+        <span id="displayName" class="font-medium text-blue-600"></span>
+      </p>
+    </div>
+
+    <!-- Users List -->
+    <div id="usersList" class="flex-1 overflow-y-auto p-4 space-y-3">
+      <!-- Users dynamically added -->
+    </div>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="flex-1 flex flex-col">
+
+    <div class="bg-white border-b p-4 font-semibold">
+      Public Chat
+    </div>
+
+    <div id="messages"
+         class="flex-1 overflow-y-auto p-6 space-y-3 bg-gray-50">
+      <div id="emptyState" class="text-center text-gray-400 mt-20">
+        No messages yet
+      </div>
+    </div>
+
+    <form id="messageForm"
+          class="bg-white border-t p-4 flex gap-3">
+      <input id="messageInput"
+             class="flex-1 border p-3 rounded-full"
+             placeholder="Type message..." autocomplete="off" />
+      <button class="bg-blue-600 text-white px-6 rounded-full hover:bg-blue-700">
+        Send
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+  const WS_ENDPOINT = '/chat';
+  const SEND_DEST = '/app/sendMessage';
+  const USERS_TOPIC = '/topic/users';
+  const MESSAGES_TOPIC = '/topic/messages';
+
+  let username = '';
+  let stompClient = null;
+  let activeUsers = new Set();
+
+  // DOM
+  const joinScreen = document.getElementById('joinScreen');
+  const chatScreen = document.getElementById('chatScreen');
+  const joinForm = document.getElementById('joinForm');
+  const usernameInput = document.getElementById('usernameInput');
+  const displayName = document.getElementById('displayName');
+  const usersListEl = document.getElementById('usersList');
+  const messagesEl = document.getElementById('messages');
+  const emptyState = document.getElementById('emptyState');
+  const messageForm = document.getElementById('messageForm');
+  const messageInput = document.getElementById('messageInput');
+
+
+  // ================= CONNECT =================
+  function connect() {
+    const socket = new SockJS(WS_ENDPOINT);
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null;
+
+    stompClient.connect({}, function () {
+
+      // Subscribe to user list
+      stompClient.subscribe(USERS_TOPIC, function (message) {
+        const users = JSON.parse(message.body);
+        updateUsers(users);
+      });
+
+      // Subscribe to messages
+      stompClient.subscribe(MESSAGES_TOPIC, function (message) {
+        const msg = JSON.parse(message.body);
+        appendMessage(msg);
+      });
+
+      // Notify backend user joined
+      stompClient.send("/app/userJoin", {}, JSON.stringify({
+        sender: username
+      }));
+
+    });
+  }
+
+
+  // ================= UPDATE USERS =================
+  function updateUsers(users) {
+
+  activeUsers = new Set(users);
+  usersListEl.innerHTML = '';
+
+  activeUsers.forEach(user => {
+
+    // ❌ Skip yourself
+    if (user === username) return;
+
+    const userDiv = document.createElement('div');
+    userDiv.className =
+      "flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition";
+
+    userDiv.dataset.user = user;
+
+    userDiv.innerHTML = `
+      <img src="https://i.pravatar.cc/50?u=${user}"
+           class="w-10 h-10 rounded-full"/>
+
+      <div class="flex flex-col">
+        <span class="text-gray-800 font-medium">${user}</span>
+        <span class="text-xs text-green-500 animate-pulse">
+          Online
+        </span>
+      </div>
+    `;
+
+    // Highlight on click
+    userDiv.addEventListener('click', function() {
+
+      // remove previous highlight
+      document.querySelectorAll('#usersList > div')
+        .forEach(el => el.classList.remove('bg-gray-200'));
+
+      userDiv.classList.add('bg-gray-200');
+    });
+
+    usersListEl.appendChild(userDiv);
+  });
+}
+
+  // ================= APPEND MESSAGE =================
+  function appendMessage(msg) {
+
+    if (emptyState) emptyState.remove();
+
+    const isMe = msg.sender === username;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = isMe ? "text-right" : "text-left";
+
+    const bubble = document.createElement('div');
+    bubble.className =
+      isMe
+        ? "inline-block bg-blue-600 text-white px-4 py-2 rounded-lg"
+        : "inline-block bg-white border px-4 py-2 rounded-lg";
+
+    if (!isMe) {
+      const sender = document.createElement('div');
+      sender.className = "text-xs text-gray-500 mb-1 font-medium";
+      sender.textContent = msg.sender;
+      bubble.appendChild(sender);
+    }
+
+    const content = document.createElement('div');
+    content.textContent = msg.content;
+    bubble.appendChild(content);
+
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+
+  // ================= SEND MESSAGE =================
+  function sendMessage(text) {
+    if (!stompClient || !stompClient.connected || !text.trim()) return;
+
+    stompClient.send(SEND_DEST, {}, JSON.stringify({
+      sender: username,
+      content: text.trim()
+    }));
+  }
+
+
+  // ================= EVENTS =================
+  joinForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    username = usernameInput.value.trim();
+    if (!username) return;
+
+    displayName.textContent = username;
+
+    joinScreen.classList.add('hide');
+    chatScreen.classList.remove('hide');
+
+    connect();
+  });
+
+  messageForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    sendMessage(messageInput.value);
+    messageInput.value = '';
+  });
+</script>
+
+</body>
+</html>
