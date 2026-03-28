@@ -79,7 +79,7 @@
 
 <!-- ================= SCRIPT ================= -->
 <script>
-  const WS_ENDPOINT = 'https://real-time-chat-application-i9n3.onrender.com/chat';
+  const WS_ENDPOINT = window.location.origin + '/chat';
   const SEND_DEST = '/app/sendMessage';
   const USERS_TOPIC = '/topic/users';
   const MESSAGES_TOPIC = '/topic/messages';
