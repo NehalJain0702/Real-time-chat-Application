@@ -1,19 +1,22 @@
 package com.chat.application.app.model;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
 
-
-
+@Entity
 public class ChatMessage {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String sender;
     private String content;
+    private String receiver;
+
     public ChatMessage() {}
     public Long getId() {
         return id;
     }
-
+    @Enumerated(EnumType.STRING)
+    private MessageStatus status;
     public void setId(Long id) {
         this.id = id;
     }
@@ -33,4 +36,22 @@ public class ChatMessage {
     public void setContent(String content) {
         this.content = content;
     }
+
+    public MessageStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(MessageStatus status) {
+        this.status = status;
+    }
+
+    public String getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(String receiver) {
+        this.receiver = receiver;
+    }
+
+
 }
