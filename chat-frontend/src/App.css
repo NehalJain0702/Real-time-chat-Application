@@ -1,0 +1,67 @@
+/* ===== Custom Scrollbar ===== */
+.sidebar-scroll::-webkit-scrollbar,
+.chat-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track,
+.chat-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+    background: #c7c7cc;
+    border-radius: 10px;
+}
+
+/* ===== Message fade-in ===== */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.msg-animate {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* ===== Contact row hover ===== */
+.contact-row {
+    transition: background-color 0.15s ease;
+}
+
+.contact-row:hover {
+    background-color: #f0f1f6;
+}
+
+.contact-row.active {
+    background-color: #eaebf3;
+}
+
+/* ===== Subtle pulse for online dot ===== */
+@keyframes softPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+.online-pulse {
+    animation: softPulse 2s ease-in-out infinite;
+}

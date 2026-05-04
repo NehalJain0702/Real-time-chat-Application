@@ -17,13 +17,13 @@ import java.util.List;
 @RestController
 public class ChatController {
     private final ChatMessageRepository messageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public ChatController(SimpMessagingTemplate messagingTemplate,
                           ChatMessageRepository messageRepository) {
         this.messagingTemplate = messagingTemplate;
         this.messageRepository = messageRepository;
     }
-    private final SimpMessagingTemplate messagingTemplate;
 
 
 
@@ -33,6 +33,7 @@ public class ChatController {
 
         // Step 1: mark as SENT
         message.setStatus(MessageStatus.SENT);
+        message.setTimestamp(java.time.LocalDateTime.now());
         messageRepository.save(message);
         // send to receiver
         messagingTemplate.convertAndSend("/topic/messages", message);
@@ -44,6 +45,7 @@ public class ChatController {
 
             if (msg != null) {
                 msg.setStatus(MessageStatus.DELIVERED);
+                msg.setTimestamp(java.time.LocalDateTime.now());
                 messageRepository.save(msg);
 
                 messagingTemplate.convertAndSend("/topic/messages", msg);
@@ -60,6 +62,7 @@ public class ChatController {
         
         if (msg != null) {
             msg.setStatus(MessageStatus.SEEN);
+            msg.setTimestamp(java.time.LocalDateTime.now());
             messageRepository.save(msg);
             // notify sender that message is seen
             messagingTemplate.convertAndSend("/topic/messages", msg);

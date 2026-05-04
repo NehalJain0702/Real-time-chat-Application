@@ -2,6 +2,8 @@ package com.chat.application.app.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class ChatMessage {
     @Id
@@ -10,13 +12,18 @@ public class ChatMessage {
     private String sender;
     private String content;
     private String receiver;
-
-    public ChatMessage() {}
+    @Enumerated(EnumType.STRING)
+    private MessageStatus status;
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime timestamp;
+    
+    public ChatMessage() {
+        this.timestamp = LocalDateTime.now();
+    }
+    
     public Long getId() {
         return id;
     }
-    @Enumerated(EnumType.STRING)
-    private MessageStatus status;
     public void setId(Long id) {
         this.id = id;
     }
@@ -54,4 +61,11 @@ public class ChatMessage {
     }
 
 
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
 }
