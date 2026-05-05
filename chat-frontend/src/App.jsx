@@ -92,10 +92,25 @@ export default function App() {
   if (!username) return;
 
   fetch(`${API_URL}/api/users`)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) {
+        throw new Error("Failed to fetch users: " + res.status);
+      }
+      return res.json();
+    })
     .then(data => {
+      // Validate data is an array before filtering
+      if (!Array.isArray(data)) {
+        console.error("Expected array of users but got:", data);
+        setUsers([]);
+        return;
+      }
       // remove current user
       setUsers(data.filter(u => u.username !== username));
+    })
+    .catch(err => {
+      console.error("Error fetching users:", err);
+      setUsers([]);
     });
 }, [username]);
 
