@@ -3,7 +3,7 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client/dist/sockjs';
 import './App.css';
 
-const API_URL = import.meta.env.VITE_API_URL || window.location.origin;
+const API_URL = import.meta.env.VITE_API_URL;
 const WEBSOCKET_URL = API_URL + '/chat';
 const SEND_DESTINATION = '/app/sendMessage';
 const DELIVERED_DESTINATION = '/app/delivered';
@@ -183,14 +183,32 @@ export default function App() {
   }
   function loadMessages(contactName) {
   fetch(`${API_URL}/messages/${username}/${contactName}`)
-    .then(res => res.json())
-    .then(data => {
-      const formatted = data.map(m => ({
-        ...m,
-        _time: m.timestamp ? new Date(m.timestamp) : new Date()
-      }));
-      setMessages(formatted);
-    });
+  .then(res => {
+    if (!res.ok) {
+      throw new Error("API failed: " + res.status);
+    }
+    return res.json();
+  })
+  .then(data => {
+    console.log("API response:", data); // DEBUG
+
+    if (!Array.isArray(data)) {
+      console.error("Expected array but got:", data);
+      setMessages([]); // fallback
+      return;
+    }
+
+    const formatted = data.map(m => ({
+      ...m,
+      _time: m.timestamp ? new Date(m.timestamp) : new Date()
+    }));
+
+    setMessages(formatted);
+  })
+  .catch(err => {
+    console.error("Fetch error:", err);
+    setMessages([]);
+  });
 }
   function handleSend(e) {
   e.preventDefault();
