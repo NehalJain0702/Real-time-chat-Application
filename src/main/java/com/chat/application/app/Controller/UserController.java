@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "")
 public class UserController {
     private final UserRepository userRepository;
 
@@ -24,8 +24,8 @@ public class UserController {
     }
     @GetMapping("/add-test-users")
     public String addUsers() {
-        userRepository.save(new User(null, "Nehal"));
-        userRepository.save(new User(null, "Shubh"));
+        userRepository.save(new User(null, "Rahul"));
+        userRepository.save(new User(null, "Yash"));
 
         return "Users added";
     }
