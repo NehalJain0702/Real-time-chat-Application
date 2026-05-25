@@ -152,6 +152,8 @@ export default function App() {
     const client = new Client({
       webSocketFactory: () => new SockJS(WEBSOCKET_URL),
       reconnectDelay: 5000,
+       heartbeatIncoming: 4000,
+       heartbeatOutgoing: 4000,
       onConnect: () => {
         setConnected(true);
         // Subscribe to user-specific queue
