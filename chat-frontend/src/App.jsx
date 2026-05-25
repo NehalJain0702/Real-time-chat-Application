@@ -215,12 +215,34 @@ export default function App() {
       return;
     }
 
-    const formatted = data.map(m => ({
-      ...m,
-      _time: m.timestamp ? new Date(m.timestamp) : new Date()
-    }));
+const formatted = data.map(m => ({
+  ...m,
+  _time: m.timestamp ? new Date(m.timestamp) : new Date()
+}));
 
-    setMessages(formatted);
+setMessages(prev => {
+
+  const merged = [...prev];
+
+  formatted.forEach(fMsg => {
+
+    const exists = merged.some(m =>
+      m.id === fMsg.id ||
+
+      (
+        m.sender === fMsg.sender &&
+        m.receiver === fMsg.receiver &&
+        m.content === fMsg.content
+      )
+    );
+
+    if (!exists) {
+      merged.push(fMsg);
+    }
+  });
+
+  return merged;
+});
   })
   .catch(err => {
     console.error("Fetch error:", err);
@@ -237,8 +259,7 @@ export default function App() {
     receiver: selectedContact.name,
     content: input.trim(),
     status: 'SENT',
-    id: Date.now(),
-    _time: new Date()
+    
   };
 
   // show instantly
