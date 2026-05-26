@@ -72,11 +72,14 @@ function StatusIcon({ status }) {
 export default function App() {
   const [users, setUsers] = useState([]);
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [joined, setJoined] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [isLogin, setIsLogin] = useState(true);
+  const [authError, setAuthError] = useState('');
   const clientRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -84,35 +87,36 @@ export default function App() {
 
   // Derive contacts dynamically from all messages
   const contacts = users.map(user => ({
-  name: user.username,
-  preview: "Start chatting...",
-  online: true
-}));
-    useEffect(() => {
-  if (!username) return;
+    name: user.username,
+    preview: "Start chatting...",
+    online: true
+  }));
 
-  fetch(`${API_URL}/api/users`)
-    .then(res => {
-      if (!res.ok) {
-        throw new Error("Failed to fetch users: " + res.status);
-      }
-      return res.json();
-    })
-    .then(data => {
-      // Validate data is an array before filtering
-      if (!Array.isArray(data)) {
-        console.error("Expected array of users but got:", data);
+  // Load users after join
+  useEffect(() => {
+    if (!username || !joined) return;
+
+    fetch(`${API_URL}/api/users`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch users: " + res.status);
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (!Array.isArray(data)) {
+          console.error("Expected array of users but got:", data);
+          setUsers([]);
+          return;
+        }
+        // Remove current user from contacts
+        setUsers(data.filter(u => u.username !== username));
+      })
+      .catch(err => {
+        console.error("Error fetching users:", err);
         setUsers([]);
-        return;
-      }
-      // remove current user
-      setUsers(data.filter(u => u.username !== username));
-    })
-    .catch(err => {
-      console.error("Error fetching users:", err);
-      setUsers([]);
-    });
-}, [username]);
+      });
+  }, [username, joined]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -194,9 +198,38 @@ export default function App() {
 
   function handleJoin(e) {
     e.preventDefault();
-    if (!username.trim()) return;
-    setJoined(true);
-    connect();
+    if (!username.trim() || !password.trim()) {
+      setAuthError('Username and password are required');
+      return;
+    }
+
+    const userData = {
+      username: username.trim(),
+      password: password.trim()
+    };
+
+    fetch(`${API_URL}/api/users/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    })
+      .then(res => {
+        if (!res.ok) {
+          throw new Error("Authentication failed: " + res.status);
+        }
+        return res.json();
+      })
+      .then(data => {
+        setAuthError('');
+        setJoined(true);
+        connect();
+      })
+      .catch(err => {
+        console.error("Auth error:", err);
+        setAuthError('Failed to authenticate. Please try again.');
+      });
   }
   function loadMessages(contactName) {
   fetch(`${API_URL}/messages/${username}/${contactName}`)
@@ -306,11 +339,26 @@ setMessages(prev => {
             className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition"
           />
 
+          <label className="block mb-2 text-sm font-medium text-gray-700 mt-4">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition"
+          />
+
+          {authError && (
+            <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200">
+              <p className="text-sm text-red-700">{authError}</p>
+            </div>
+          )}
+
           <button
             type="submit"
             className="mt-6 w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-lg shadow-indigo-500/25 transition-all duration-200 active:scale-[0.98] cursor-pointer"
           >
-            Join Chat
+            {isLogin ? 'Login / Register' : 'Create Account'}
           </button>
         </form>
       </div>
