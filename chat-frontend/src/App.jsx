@@ -301,7 +301,7 @@ setMessages(prev => {
   };
 
   // show instantly
-  setMessages(prev => [...prev, msg]);
+  
 
   // send ONCE
   clientRef.current.publish({
