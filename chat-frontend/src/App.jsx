@@ -197,39 +197,32 @@ export default function App() {
   }
 
   function handleJoin(e) {
-    e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      setAuthError('Username and password are required');
-      return;
+    const endpoint = isLogin
+  ? "/api/users/login"
+  : "/api/users/register";
+
+fetch(`${API_URL}${endpoint}`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify(userData)
+})
+  .then(res => {
+    if (!res.ok) {
+      throw new Error("Authentication failed: " + res.status);
     }
-
-    const userData = {
-      username: username.trim(),
-      password: password.trim()
-    };
-
-    fetch(`${API_URL}/api/users/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(userData)
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error("Authentication failed: " + res.status);
-        }
-        return res.json();
-      })
-      .then(data => {
-        setAuthError('');
-        setJoined(true);
-        connect();
-      })
-      .catch(err => {
-        console.error("Auth error:", err);
-        setAuthError('Failed to authenticate. Please try again.');
-      });
+    return res.json();
+  })
+  .then(data => {
+    setAuthError('');
+    setJoined(true);
+    connect();
+  })
+  .catch(err => {
+    console.error("Auth error:", err);
+    setAuthError('Failed to authenticate. Please try again.');
+  });
   }
   function loadMessages(contactName) {
   fetch(`${API_URL}/messages/${username}/${contactName}`)
