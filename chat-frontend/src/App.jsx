@@ -210,8 +210,8 @@ export default function App() {
   };
 
   const endpoint = isLogin
-    ? "/api/users/login"
-    : "/api/users/register";
+  ? "/api/users/login"
+  : "/api/users/register";
 
   fetch(`${API_URL}${endpoint}`, {
     method: "POST",
@@ -365,6 +365,15 @@ setMessages(prev => {
           >
             {isLogin ? 'Login / Register' : 'Create Account'}
           </button>
+          <button
+  type="button"
+  onClick={() => setIsLogin(!isLogin)}
+  className="mt-4 w-full text-sm text-indigo-600 hover:text-indigo-800"
+>
+  {isLogin
+    ? "Need an account? Register"
+    : "Already have an account? Login"}
+</button>
         </form>
       </div>
     );
