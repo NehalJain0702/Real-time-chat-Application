@@ -33,6 +33,8 @@ public class UserController {
     }
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
+        System.out.println("Username: " + user.getUsername());
+        System.out.println("Password: " + user.getPassword());
         return userService.saveUser(user);
     }
 }
